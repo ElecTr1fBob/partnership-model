@@ -381,9 +381,9 @@ function setCurrency(cur) {
 // ==================== MODEL ====================
 function danielPct(x) {
   if (x <= 6.8) return 0.5;
-  if (x >= 65) return 0.8;
+  if (x >= 110) return 0.8;
   const num = 1 - Math.exp(-0.05 * Math.pow(x - 6.8, 0.40));
-  const den = 1 - Math.exp(-0.05 * Math.pow(58.2, 0.40));
+  const den = 1 - Math.exp(-0.05 * Math.pow(103.2, 0.40));
   return 0.5 + 0.3 * (num / den);
 }
 
@@ -418,17 +418,17 @@ function renderOverview() {
   document.getElementById('ovLiorTarget').textContent = targetStr;
 
   document.getElementById('ovPrinciple1').textContent = 'For any outcome up to ' + fmtUsd(6.8) + ', we split everything 50/50. Period. We\u2019re in this together from day one.';
-  document.getElementById('ovPrinciple3').textContent = 'Lior\u2019s ' + targetStr + ' target is achievable at a ' + fmtUsd(75) + ' exit. The model is designed to help both partners reach their goals.';
+  document.getElementById('ovPrinciple3').textContent = 'Lior\u2019s ' + targetStr + ' target is achievable at a ' + fmtUsd(56) + ' exit. The model is designed to help both partners reach their goals.';
 
-  document.getElementById('ovHighlight1').innerHTML = 'At a <strong>' + fmtUsd(50) + ' exit</strong>, Lior walks away with <strong>' + fmtUsd(lior50) + '</strong> \u2014 that\u2019s 77% of the ' + targetStr + ' target from a project that\u2019s only halfway to Daniel\u2019s ' + fmtUsd(100) + ' goal.';
-  document.getElementById('ovHighlight2').innerHTML = 'At <strong>' + fmtUsd(75) + '</strong>, Lior <strong>exceeds his target</strong> with ' + targetStr + '. And we start from a place of true equality \u2014 50/50 for anything under ' + fmtUsd(6.8) + '.';
+  document.getElementById('ovHighlight1').innerHTML = 'At a <strong>' + fmtUsd(50) + ' exit</strong>, Lior walks away with <strong>' + fmtUsd(lior50) + '</strong> \u2014 that\u2019s 93% of the ' + targetStr + ' target from a project that\u2019s only halfway to Daniel\u2019s ' + fmtUsd(100) + ' goal.';
+  document.getElementById('ovHighlight2').innerHTML = 'At <strong>' + fmtUsd(56) + '</strong>, Lior <strong>hits his target</strong> of ' + targetStr + '. And we start from a place of true equality \u2014 50/50 for anything under ' + fmtUsd(6.8) + '.';
 
   document.getElementById('ovMs1Val').textContent = '\u2264 ' + fmtUsd(6.8);
   document.getElementById('ovMs2Val').textContent = fmtUsd(25);
   document.getElementById('ovMs2Label').innerHTML = 'Lior gets ' + fmtUsd(lior25) + '<br>halfway to target';
   document.getElementById('ovMs3Val').textContent = fmtUsd(50);
-  document.getElementById('ovMs3Label').innerHTML = 'Lior gets ' + fmtUsd(lior50) + '<br>77% of target';
-  document.getElementById('ovMs4Val').textContent = fmtUsd(75);
+  document.getElementById('ovMs3Label').innerHTML = 'Lior gets ' + fmtUsd(lior50) + '<br>93% of target';
+  document.getElementById('ovMs4Val').textContent = fmtUsd(56);
   document.getElementById('ovMs4Label').innerHTML = 'Lior hits ' + targetStr + '<br>\uD83C\uDFAF target achieved!';
 }
 
@@ -546,9 +546,9 @@ function renderGrowth() {
 
   document.getElementById('growthDesc').textContent = 'See how both partners\u2019 payouts grow as the company value increases. The dashed line marks Lior\u2019s ' + targetStr + ' target.';
   document.getElementById('journeyTitle').textContent = 'Lior\u2019s Path to ' + targetStr;
-  document.getElementById('growthRealistic').textContent = 'At ' + fmtUsd(50) + ' \u2014 which is just 50% of Daniel\u2019s long-term goal \u2014 Lior is already at 77% of his own target. At ' + fmtUsd(75) + ', he hits it.';
+  document.getElementById('growthRealistic').textContent = 'At ' + fmtUsd(50) + ' \u2014 which is just 50% of Daniel\u2019s long-term goal \u2014 Lior is already at 93% of his own target. At ' + fmtUsd(56) + ', he hits it.';
   document.getElementById('growthDownside').textContent = 'If things don\u2019t go as planned and we exit at ' + fmtUsd(5) + ' or ' + fmtUsd(6.8) + ', it\u2019s still an equal 50/50 split. No one gets left behind.';
-  document.getElementById('growthBottomLine').innerHTML = 'Build to <strong>' + fmtUsd(75) + '</strong> and Lior takes home <strong>' + targetStr + '</strong>. That\u2019s the deal \u2014 clear, transparent, and achievable. The only way to lose is to not build.';
+  document.getElementById('growthBottomLine').innerHTML = 'Build to <strong>' + fmtUsd(56) + '</strong> and Lior takes home <strong>' + targetStr + '</strong>. That\u2019s the deal \u2014 clear, transparent, and achievable. The only way to lose is to not build.';
 
   // Chart
   if (growthChart) { growthChart.destroy(); growthChart = null; }
@@ -581,7 +581,7 @@ function renderGrowth() {
   });
 
   // Journey table
-  const journeyExits = [5, 8, 10, 15, 20, 25, 30, 40, 50, 65, 75, 100, 150, 200, 300, 500];
+  const journeyExits = [5, 8, 10, 15, 20, 25, 30, 40, 50, 56, 75, 100, 110, 150, 200, 300, 500];
   const tbody = document.getElementById('liorJourney');
   tbody.innerHTML = '';
   journeyExits.forEach(val => {
@@ -600,7 +600,7 @@ function renderGrowth() {
 function renderScenarios() {
   document.getElementById('customPrefix').textContent = 'Exit Value: ' + sym();
 
-  const exits = [1, 3, 5, 8, 10, 15, 20, 25, 30, 40, 50, 65, 75, 100, 125, 150, 200, 250, 300, 400, 500];
+  const exits = [1, 3, 5, 8, 10, 15, 20, 25, 30, 40, 50, 56, 65, 75, 100, 110, 125, 150, 200, 250, 300, 400, 500];
   const tbody = document.getElementById('scenarioTable');
   tbody.innerHTML = '';
 
@@ -610,7 +610,7 @@ function renderScenarios() {
     const dAmt = val * dp;
     const lAmt = val * lp;
     const tPct = Math.round(lAmt / LIOR_TARGET_USD * 100);
-    const isHighlight = [5, 50, 75].includes(val);
+    const isHighlight = [5, 50, 56].includes(val);
     const isEqual = val <= 6.8;
     tbody.innerHTML += '<tr' + (isHighlight ? ' class="row-highlight"' : isEqual ? ' class="row-equal"' : '') + '>' +
       '<td>' + fmtUsd(val) + '</td>' +
@@ -632,7 +632,7 @@ function calcCustom() {
   const lp = 1 - dp;
   document.getElementById('cDanielAmt').textContent = fmtUsd(xUsd * dp);
   document.getElementById('cLiorAmt').textContent = fmtUsd(xUsd * lp);
-  document.getElementById('cSplit').textContent = (dp * 100).toFixed(1) + ' / ' + (lp * 100).toFixed(1);
+  document.getElentById('cSplit').textContent = (dp * 100).toFixed(1) + ' / ' + (lp * 100).toFixed(1);
   document.getElementById('customResult').style.display = 'block';
 }
 
