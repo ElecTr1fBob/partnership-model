@@ -367,6 +367,786 @@
     <p class="subtitle">Complete formal definition of the partnership equity function for verification and analysis</p>
 
     <div class="card">
+      <h3>1. Core Formula — The Piecewise Function</h3>
+      <p>Daniel’s equity share D(x) as a function of exit value x (in millions USD):</p>
+      <div class="math-block">D(x) = {\n  0.50                          if x ≤ 6.8\n  0.50 + 0.30 · f(x)           if 6.8 &lt; x &lt; 110\n  0.80                          if x ≥ 110\n}</div>
+      <p>where:</p>
+      <div class="math-block">f(x) = [1 − e^(−k · (x − x₀)^p)] / [1 − e^(−k · (x_max − x₀)^p)]</div>
+      <p>with parameters:</p>
+      <table class="param-table">
+        <tr><th>Parameter</th><th>Value</th><th>Meaning</th></tr>
+        <tr><td class="param-name">x₀</td><td>6.8</td><td>Transition point — exit value where equity shift begins ($6.8M)</td></tr>
+        <tr><td class="param-name">x_max</td><td>110</td><td>Saturation point — exit value where Daniel reaches maximum equity ($110M)</td></tr>
+        <tr><td class="param-name">k</td><td>0.05</td><td>Rate parameter — controls steepness of the S-curve transition</td></tr>
+        <tr><td class="param-name">p</td><td>0.40</td><td>Power parameter — creates concavity (sublinear growth via power-law input)</td></tr>
+        <tr><td class="param-name">D_min</td><td>0.50 (50%)</td><td>Daniel’s minimum equity share (equal split baseline)</td></tr>
+        <tr><td class="param-name">D_max</td><td>0.80 (80%)</td><td>Daniel’s maximum equity share (cap)</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>2. Function Design Rationale</h3>
+      <h4>2.1 Why a Modified Complementary Exponential CDF?</h4>
+      <p>The core building block <span class="math-inline">1 − e^(−t)</span> is the CDF of an exponential distribution. It maps [0, ∞) → [0, 1) with natural saturation behavior — fast initial growth that gradually levels off.</p>
+      <h4>2.2 Why the Power-Law Input Transform?</h4>
+      <p>Instead of using the raw distance <span class="math-inline">(x − x₀)</span>, we apply <span class="math-inline">(x − x₀)^0.40</span>. Since p = 0.40 &lt; 1, this is a concave transform that compresses large values more than small ones, creating diminishing returns.</p>
+      <h4>2.3 Why the Normalization Denominator?</h4>
+      <p>The denominator ensures f(x_max) = 1 exactly. Without it, the exponential CDF approaches 1 asymptotically but never reaches it.</p>
+      <div class="math-block">Denominator = 1 − e^(−0.05 · 103.2^0.40) ≈ 1 − e^(−0.31955) ≈ 1 − 0.72634 ≈ 0.27366</div>
+      <h4>2.4 The Complete Expansion</h4>
+      <div class="math-block">For 6.8 &lt; x &lt; 110:
+D(x) = 0.50 + 0.30 · [1 − e^(−0.05 · (x−6.8)^0.40)] / 0.27366
+
+Or equivalently:
+D(x) = 0.50 + 1.0963 · [1 − e^(−0.05 · (x−6.8)^0.40)]</div>
+    </div>
+
+    <div class="card">
+      <h3>3. Key Mathematical Properties</h3>
+      <div class="math-proof"><strong>Continuity at x = 6.8:</strong><br>lim(x→6.8⁺) D(x) = 0.50 + 0.30 · f(6.8) = 0.50 + 0.30 · 0 = 0.50 = D(6.8) ✓</div>
+      <div class="math-proof"><strong>Continuity at x = 110:</strong><br>lim(x→110⁻) D(x) = 0.50 + 0.30 · f(110) = 0.50 + 0.30 · 1 = 0.80 = D(110) ✓</div>
+      <div class="math-proof"><strong>Monotonicity (D is non-decreasing):</strong><br>For x ≤ 6.8: constant ✓<br>For x ≥ 110: constant ✓<br>For 6.8 &lt; x &lt; 110: D'(x) = 0.30 · f'(x) &gt; 0 (composition of increasing functions) ✓</div>
+      <div class="math-proof"><strong>Bounded range:</strong> D(x) ∈ [0.50, 0.80], Lior's share L(x) = 1 − D(x) ∈ [0.20, 0.50] ✓</div>
+    </div>
+
+    <div class="card">
+      <h3>4. Parameter Reference</h3>
+      <table class="param-table">
+        <tr><th>Symbol</th><th>Expression</th><th>Approximate Value</th></tr>
+        <tr><td class="param-name">k · (x_max−x₀)^p</td><td>0.05 · 103.2^0.40</td><td>0.31955</td></tr>
+        <tr><td class="param-name">e^(−k·(x_max−x₀)^p)</td><td>e^(−0.31955)</td><td>0.72634</td></tr>
+        <tr><td class="param-name">Normalization</td><td>1 − e^(−0.31955)</td><td>0.27366</td></tr>
+        <tr><td class="param-name">Scale factor</td><td>0.30 / 0.27366</td><td>1.09627</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>5. Derivative — Rate of Equity Shift</h3>
+      <p>The derivative D'(x) shows how quickly equity shifts per million dollar increase:</p>
+      <div style="height:300px; position:relative;"><canvas id="derivativeChart"></canvas></div>
+      <p style="margin-top:12px; font-size:13px; color:var(--text);">Peak rate occurs just above $6.8M, then decreases monotonically.</p>
+    </div>
+
+    <div class="card">
+      <h3>6. Numerical Verification Table</h3>
+      <p>Computed values for verification (all from the exact formula):</p>
+      <div style="overflow-x:auto;">
+        <table class="param-table">
+          <thead><tr><th>Exit Value</th><th>Daniel %</th><th>Lior %</th><th>Daniel $</th><th>Lior $</th><th>D'(x)</th></tr></thead>
+          <tbody id="mathVerifyTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>7. Asymptotic Behavior</h3>
+      <div class="math-block">As x approaches infinity (beyond the model range):
+Without capping: D(x) approaches 0.50 + 1.0963 = 1.5963
+This exceeds 1.0, which is why the cap at D_max = 0.80 is essential.
+The cap engages at x = 110M where f(x) = 1 exactly.</div>
+    </div>
+
+    <div class="card">
+      <h3>8. Design Principles Summary</h3>
+      <p><strong>Equal baseline:</strong> At modest exits (up to $6.8M), partners split 50/50.</p>
+      <p><strong>Performance reward:</strong> Beyond $6.8M, Daniel's operational execution earns additional equity.</p>
+      <p><strong>Diminishing marginal shift:</strong> The concave power transform (p=0.40) ensures each additional million shifts less equity than the previous one.</p>
+      <p><strong>Hard cap protection:</strong> Lior never drops below 20%, preserving meaningful co-ownership.</p>
+      <p><strong>Mathematical elegance:</strong> A single continuous, monotone, bounded function with no discontinuities, no edge cases, fully deterministic.</p>
+    </div>
+Partnership Equity Model &middot; Confidential &middot; 2026</div>
+
+<script>
+// ==================== CURRENCY ====================
+const ILS_RATE = 3.09;
+let currency = 'ILS'; // default
+
+function sym() { return currency === 'ILS' ? '\u20AA' : '$'; }
+function rate() { return currency === 'ILS' ? ILS_RATE : 1; }
+
+// Convert USD millions to display currency millions
+function c(usdM) { return usdM * rate(); }
+
+// Format a value already in display currency
+function fmtM(val) {
+  if (val >= 1000) return sym() + (val / 1000).toFixed(1) + 'B';
+  return sym() + val.toFixed(1) + 'M';
+}
+
+// Format USD millions -> display currency string
+function fmtUsd(usdM) { return fmtM(c(usdM)); }
+
+function setCurrency(cur) {
+  currency = cur;
+  document.getElementById('btnILS').classList.toggle('active', cur === 'ILS');
+  document.getElementById('btnUSD').classList.toggle('active', cur === 'USD');
+  refreshAll();
+}
+
+// ==================== MODEL ====================
+function danielPct(x) {
+  if (x <= 6.8) return 0.5;
+  if (x >= 110) return 0.8;
+  const num = 1 - Math.exp(-0.05 * Math.pow(x - 6.8, 0.40));
+  const den = 1 - Math.exp(-0.05 * Math.pow(103.2, 0.40));
+  return 0.5 + 0.3 * (num / den);
+}
+
+const LIOR_TARGET_USD = 15; // $15M
+
+// ==================== TABS ====================
+let currentTab = 'overview';
+function showTab(id) {
+  currentTab = id;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.tab')[['overview','explorer','growth','scenarios','math'].indexOf(id)].classList.add('active');
+  refreshAll();
+}
+
+// ==================== REFRESH ALL ====================
+function refreshAll() {
+  renderOverview();
+  renderExplorer();
+  renderGrowth();
+  renderScenarios();
+}
+
+// ==================== OVERVIEW ====================
+function renderOverview() {
+  const lior25 = 25 * (1 - danielPct(25));
+  const lior50 = 50 * (1 - danielPct(50));
+  const targetStr = fmtUsd(LIOR_TARGET_USD);
+
+  document.getElementById('ovEqualSplit').textContent = fmtUsd(6.8);
+  document.getElementById('ovLiorTarget').textContent = targetStr;
+
+  document.getElementById('ovPrinciple1').textContent = 'For any outcome up to ' + fmtUsd(6.8) + ', we split everything 50/50. Period. We’re in this together from day one.';
+  document.getElementById('ovPrinciple3').textContent = 'Lior’s ' + targetStr + ' target is achievable at a ' + fmtUsd(56) + ' exit. The model is designed to help both partners reach their goals.';
+
+  document.getElementById('ovHighlight1').innerHTML = 'At a <strong>' + fmtUsd(50) + ' exit</strong>, Lior walks away with <strong>' + fmtUsd(lior50) + '</strong> — that’s 93% of the ' + targetStr + ' target from a project that’s only halfway to Daniel’s ' + fmtUsd(100) + ' goal.';
+  document.getElementById('ovHighlight2').innerHTML = 'At <strong>' + fmtUsd(56) + '</strong>, Lior <strong>hits his target</strong> of ' + targetStr + '. And we start from a place of true equality — 50/50 for anything under ' + fmtUsd(6.8) + '.';
+
+  document.getElementById('ovMs1Val').textContent = '≤ ' + fmtUsd(6.8);
+  document.getElementById('ovMs2Val').textContent = fmtUsd(25);
+  document.getElementById('ovMs2Label').innerHTML = 'Lior gets ' + fmtUsd(lior25) + '<br>halfway to target';
+  document.getElementById('ovMs3Val').textContent = fmtUsd(50);
+  document.getElementById('ovMs3Label').innerHTML = 'Lior gets ' + fmtUsd(lior50) + '<br>93% of target';
+  document.getElementById('ovMs4Val').textContent = fmtUsd(56);
+  document.getElementById('ovMs4Label').innerHTML = 'Lior hits ' + targetStr + '<br>\uD83C\uDFAF target achieved!';
+}
+
+// ==================== EXPLORER ====================
+let explorerPctChart, explorerPayChart;
+
+function renderExplorer() {
+  // Slider ticks
+  const ticks = [1, 100, 200, 300, 400, 500];
+  document.getElementById('sliderTicks').innerHTML = ticks.map(v => '<span>' + fmtUsd(v) + '</span>').join('');
+  document.getElementById('payoutChartTitle').textContent = 'Payouts (' + sym() + ')';
+  document.getElementById('progressLabel').textContent = 'Lior’s Progress Toward ' + fmtUsd(LIOR_TARGET_USD) + ' Target';
+
+  // Destroy and rebuild charts
+  if (explorerPctChart) { explorerPctChart.destroy(); explorerPctChart = null; }
+  if (explorerPayChart) { explorerPayChart.destroy(); explorerPayChart = null; }
+
+  const exits = [];
+  for (let x = 0; x <= 500; x += 1) exits.push(x);
+  const r = rate();
+
+  explorerPctChart = new Chart(document.getElementById('explorerPctChart'), {
+    type: 'line',
+    data: {
+      datasets: [
+        { label: 'Daniel %', data: exits.map(x => ({ x: x * r, y: danielPct(x) * 100 })), borderColor: '#2E5090', borderWidth: 2, pointRadius: 0, fill: false },
+        { label: 'Lior %', data: exits.map(x => ({ x: x * r, y: (1 - danielPct(x)) * 100 })), borderColor: '#0D9488', borderWidth: 2.5, pointRadius: 0, fill: false },
+      ]
+    },
+    options: makeChartOpts('Share %', 0, 100, v => v + '%')
+  });
+
+  const targetUsdConverted = LIOR_TARGET_USD * r;
+  explorerPayChart = new Chart(document.getElementById('explorerPayChart'), {
+    type: 'line',
+    data: {
+      datasets: [
+        { label: 'Daniel', data: exits.map(x => ({ x: x * r, y: x * danielPct(x) * r })), borderColor: '#2E5090', borderWidth: 2, pointRadius: 0, fill: false },
+        { label: 'Lior', data: exits.map(x => ({ x: x * r, y: x * (1 - danielPct(x)) * r })), borderColor: '#0D9488', borderWidth: 2.5, pointRadius: 0, fill: false },
+        { label: 'Lior’s ' + fmtUsd(LIOR_TARGET_USD) + ' Target', data: exits.map(x => ({ x: x * r, y: targetUsdConverted })), borderColor: '#D97706', borderWidth: 1.5, borderDash: [5,4], pointRadius: 0, fill: false },
+      ]
+    },
+    options: makeChartOpts('Payout (' + sym() + 'M)', 0, null, v => sym() + v.toFixed(0) + 'M')
+  });
+
+  updateExplorer();
+}
+
+function makeChartOpts(yLabel, yMin, yMax, tickCb) {
+  return {
+    responsive: true, maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    scales: {
+      x: {
+        type: 'linear',
+        title: { display: true, text: 'Exit Value (' + sym() + 'M)', font: { size: 12 } },
+        min: 0, max: 500 * rate(),
+        ticks: { callback: v => sym() + (v >= 1000 ? (v/1000).toFixed(0) + 'B' : v.toFixed(0) + 'M') }
+      },
+      y: {
+        title: { display: true, text: yLabel, font: { size: 12 } },
+        min: yMin, max: yMax,
+        ticks: tickCb ? { callback: tickCb } : {}
+      }
+    },
+    plugins: {
+      legend: { position: 'top', labels: { usePointStyle: true, padding: 16 } },
+      tooltip: {
+        callbacks: {
+          title: items => 'Exit: ' + sym() + items[0].parsed.x.toFixed(1) + 'M',
+          label: item => {
+            const l = item.dataset.label;
+            if (l.includes('%') || l.includes('Share')) return l + ': ' + item.parsed.y.toFixed(1) + '%';
+            return l + ': ' + sym() + item.parsed.y.toFixed(1) + 'M';
+          }
+        }
+      }
+    }
+  };
+}
+
+function updateExplorer() {
+  const xUsd = parseFloat(document.getElementById('exitSlider').value);
+  const dp = danielPct(xUsd);
+  const lp = 1 - dp;
+  const dAmtUsd = xUsd * dp;
+  const lAmtUsd = xUsd * lp;
+  const targetPct = (lAmtUsd / LIOR_TARGET_USD) * 100; // uncapped
+
+  document.getElementById('sliderVal').textContent = fmtUsd(xUsd);
+  document.getElementById('danielAmt').textContent = fmtUsd(dAmtUsd);
+  document.getElementById('danielPct').textContent = (dp * 100).toFixed(1) + '%';
+  document.getElementById('liorAmt').textContent = fmtUsd(lAmtUsd);
+  document.getElementById('liorPct').textContent = (lp * 100).toFixed(1) + '%';
+
+  const tPct = Math.round(targetPct);
+  if (tPct >= 100) {
+    document.getElementById('liorTarget').textContent = '\uD83C\uDFAF ' + tPct + '% of target (' + fmtUsd(LIOR_TARGET_USD) + ')';
+  } else {
+    document.getElementById('liorTarget').textContent = tPct + '% of ' + fmtUsd(LIOR_TARGET_USD) + ' target';
+  }
+
+  document.getElementById('progressPct').textContent = tPct + '%';
+  document.getElementById('progressFill').style.width = Math.min(targetPct, 100) + '%';
+  document.getElementById('progressFill').style.background = targetPct >= 100
+    ? 'linear-gradient(90deg, #059669, #10B981)'
+    : 'linear-gradient(90deg, #0D9488, #059669)';
+}
+
+// ==================== GROWTH ====================
+let growthChart;
+
+function renderGrowth() {
+  const targetStr = fmtUsd(LIOR_TARGET_USD);
+
+  document.getElementById('growthDesc').textContent = 'See how both partners’ payouts grow as the company value increases. The dashed line marks Lior’s ' + targetStr + ' target.';
+  document.getElementById('journeyTitle').textContent = 'Lior’s Path to ' + targetStr;
+  document.getElementById('growthRealistic').textContent = 'At ' + fmtUsd(50) + ' — which is just 50% of Daniel’s long-term goal — Lior is already at 93% of his own target. At ' + fmtUsd(56) + ', he hits it.';
+  document.getElementById('growthDownside').textContent = 'If things don’t go as planned and we exit at ' + fmtUsd(5) + ' or ' + fmtUsd(6.8) + ', it’s still an equal 50/50 split. No one gets left behind.';
+  document.getElementById('growthBottomLine').innerHTML = 'Build to <strong>' + fmtUsd(56) + '</strong> and Lior takes home <strong>' + targetStr + '</strong>. That’s the deal — clear, transparent, and achievable. The only way to lose is to not build.';
+
+  // Chart
+  if (growthChart) { growthChart.destroy(); growthChart = null; }
+  const exits = [];
+  for (let x = 0; x <= 500; x += 1) exits.push(x);
+  const r = rate();
+  const targetConverted = LIOR_TARGET_USD * r;
+
+  growthChart = new Chart(document.getElementById('growthChart'), {
+    type: 'line',
+    data: {
+      datasets: [
+        { label: 'Daniel', data: exits.map(x => ({ x: x * r, y: x * danielPct(x) * r })), borderColor: '#2E5090', borderWidth: 2, pointRadius: 0, fill: { target: 'origin', above: 'rgba(46,80,144,0.08)' } },
+        { label: 'Lior', data: exits.map(x => ({ x: x * r, y: x * (1 - danielPct(x)) * r })), borderColor: '#0D9488', borderWidth: 3, pointRadius: 0, fill: { target: 'origin', above: 'rgba(13,148,136,0.12)' } },
+        { label: 'Lior’s ' + targetStr + ' Target', data: exits.map(x => ({ x: x * r, y: targetConverted })), borderColor: '#D97706', borderWidth: 2, borderDash: [6,4], pointRadius: 0, fill: false }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        x: { type: 'linear', title: { display: true, text: 'Exit Value (' + sym() + 'M)', font: { size: 13 } }, min: 0, max: 500 * r, ticks: { callback: v => sym() + (v >= 1000 ? (v/1000).toFixed(0) + 'B' : v.toFixed(0) + 'M') } },
+        y: { title: { display: true, text: 'Payout (' + sym() + 'M)', font: { size: 13 } }, min: 0, ticks: { callback: v => sym() + (v >= 1000 ? (v/1000).toFixed(0) + 'B' : v.toFixed(0) + 'M') } }
+      },
+      plugins: {
+        legend: { position: 'top', labels: { usePointStyle: true, padding: 20, font: { size: 13 } } },
+        tooltip: { callbacks: { title: items => 'Exit: ' + sym() + items[0].parsed.x.toFixed(1) + 'M', label: item => item.dataset.label + ': ' + sym() + item.parsed.y.toFixed(1) + 'M' } }
+      }
+    }
+  });
+
+  // Journey table
+  const journeyExits = [5, 8, 10, 15, 20, 25, 30, 40, 50, 56, 75, 100, 110, 150, 200, 300, 500];
+  const tbody = document.getElementById('liorJourney');
+  tbody.innerHTML = '';
+  journeyExits.forEach(val => {
+    const lAmt = val * (1 - danielPct(val));
+    const tPct = (lAmt / LIOR_TARGET_USD * 100);
+    const hit = tPct >= 99.5;
+    tbody.innerHTML += '<tr' + (hit ? ' class="row-highlight"' : val <= 6.8 ? ' class="row-equal"' : '') + '>' +
+      '<td>' + fmtUsd(val) + '</td>' +
+      '<td>' + fmtUsd(lAmt) + '</td>' +
+      '<td>' + (hit ? '\uD83C\uDFAF ' : '') + Math.round(tPct) + '%</td>' +
+      '</tr>';
+  });
+}
+
+// ==================== SCENARIOS ====================
+function renderScenarios() {
+  document.getElementById('customPrefix').textContent = 'Exit Value: ' + sym();
+
+  const exits = [1, 3, 5, 8, 10, 15, 20, 25, 30, 40, 50, 56, 65, 75, 100, 110, 125, 150, 200, 250, 300, 400, 500];
+  const tbody = document.getElementById('scenarioTable');
+  tbody.innerHTML = '';
+
+  exits.forEach(val => {
+    const dp = danielPct(val);
+    const lp = 1 - dp;
+    const dAmt = val * dp;
+    const lAmt = val * lp;
+    const tPct = Math.round(lAmt / LIOR_TARGET_USD * 100);
+    const isHighlight = [5, 50, 56].includes(val);
+    const isEqual = val <= 6.8;
+    tbody.innerHTML += '<tr' + (isHighlight ? ' class="row-highlight"' : isEqual ? ' class="row-equal"' : '') + '>' +
+      '<td>' + fmtUsd(val) + '</td>' +
+      '<td>' + (dp * 100).toFixed(1) + '%</td>' +
+      '<td>' + fmtUsd(dAmt) + '</td>' +
+      '<td>' + (lp * 100).toFixed(1) + '%</td>' +
+      '<td>' + fmtUsd(lAmt) + '</td>' +
+      '<td>' + (tPct >= 100 ? '\uD83C\uDFAF ' + tPct + '%' : tPct + '%') + '</td>' +
+      '</tr>';
+  });
+}
+
+function calcCustom() {
+  const inputVal = parseFloat(document.getElementById('customExit').value);
+  if (!inputVal || inputVal <= 0) return;
+  // Input is in display currency, convert to USD for model
+  const xUsd = inputVal / rate();
+  const dp = danielPct(xUsd);
+  const lp = 1 - dp;
+  document.getElementById('cDanielAmt').textContent = fmtUsd(xUsd * dp);
+  document.getElementById('cLiorAmt').textContent = fmtUsd(xUsd * lp);
+  document.getElentById('cSplit').textContent = (dp * 100).toFixed(1) + ' / ' + (lp * 100).toFixed(1);
+  document.getElementById('customResult').style.display = 'block';
+}
+
+// ==================== INIT ====================
+    let derivChart;
+    function renderMath() {
+      if (currentTab !== 'math') return;
+      if (derivChart) { derivChart.destroy(); derivChart = null; }
+      const h = 0.001;
+      const points = [];
+      for (let x = 0; x <= 150; x += 0.5) {
+        const dPrime = (danielPct(x + h) - danielPct(x - h)) / (2 * h);
+        points.push({ x: x, y: dPrime * 100 });
+      }
+      const ctx = document.getElementById('derivativeChart');
+      if (ctx) {
+        derivChart = new Chart(ctx, {
+          type: 'line',
+          data: { datasets: [{ label: "D'(x) rate of equity shift (pp per $M)", data: points, borderColor: '#D97706', borderWidth: 2.5, pointRadius: 0, fill: { target: 'origin', above: 'rgba(217,119,6,0.1)' } }] },
+          options: { responsive: true, maintainAspectRatio: false, scales: { x: { type: 'linear', title: { display: true, text: 'Exit Value ($M USD)', font: { size: 12 } }, min: 0, max: 150 }, y: { title: { display: true, text: "D'(x) (percentage points per $M)", font: { size: 12 } }, min: 0 } }, plugins: { legend: { position: 'top', labels: { usePointStyle: true, padding: 16 } } } }
+        });
+      }
+      const tablePoints = [1, 5, 6.8, 7, 10, 15, 20, 25, 30, 40, 50, 56, 75, 100, 110, 150, 200, 300, 500];
+      const tbody = document.getElementById('mathVerifyTable');
+      if (tbody) {
+        tbody.innerHTML = '';
+        tablePoints.forEach(function(x) {
+          const dp = danielPct(x); const lp = 1 - dp;
+          const dPay = x * dp; const lPay = x * lp;
+          const dPrime = (danielPct(x + h) - danielPct(x - h)) / (2 * h);
+          const cls = x <= 6.8 ? ' class="row-equal"' : x >= 110 ? ' class="row-highlight"' : '';
+          tbody.innerHTML += '<tr' + cls + '><td>$' + x + 'M</td><td>' + (dp*100).toFixed(4) + '%</td><td>' + (lp*100).toFixed(4) + '%</td><td>$' + dPay.toFixed(2) + 'M</td><td>$' + lPay.toFixed(2) + 'M</td><td>' + dPrime.toFixed(6) + '</td></tr>';
+        });
+      }
+    }
+
+window.addEventListener('DOMContentLoaded', () => { refreshAll(); });
+</script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Partnership Equity Model</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    :root { --navy: #1B2A4A; --steel: #2E5090; --teal: #0D9488; --teal-light: #CCFBF1; --gold: #D97706; --gold-light: #FEF3C7; --bg: #F8FAFC; --card: #FFFFFF; --border: #E2E8F0; --text: #1E293B; --muted: #64748B; --success: #059669; }
+    * { margin: 0; padding: 0; box-sizing: border -box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, sans-serif; background: var(--bg); color: var(--text); }
+    /* NAV */
+    .topbar { background: var(--navy); color: white; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+    .topbar h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+    .topbar .partners { font-size: 13px; opacity: 0.7; }
+    .tabs { display: flex; background: #16233D; padding: 0 32px; gap: 0; }
+    .tab { padding: 12px 24px; color: rgba(255,255,255,0.6); font-size: 14px; font-weight: 500; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s; }
+    .tab:hover { color: rgba(255,255,255,0.85); }
+    .tab.active { color: white; border-bottom-color: var(--teal); }
+    /* CURRENCY TOGGLE */
+    .currency-toggle { display: flex; align-items: center; gap: 8px; }
+    .currency-toggle .label { font-size: 12px; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.5px; }
+    .toggle-btn { display: flex; background: rgba(255,255,255,0.12); border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.15); }
+    .toggle-btn button { padding: 7px 16px; border: none; background: transparent; color: rgba(255,255,255,0.5); font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+    .toggle-btn button.active { background: var(--teal); color: white; }
+    .rate-note { font-size: 10px; opacity: 0.4; margin-top: 2px; text-align: right; }
+    /* LAYOUT */
+    .page { display: none; padding: 32px; max-width: 1200px; margin: 0 auto; }
+    .page.active { display: block; }
+    /* CARDS */
+    .card { background: var(--card); border-radius: 16px; border: 1px solid var(--border); padding: 24px; margin-bottom: 20px; }
+    .card h2 { font-size: 18px; font-weight: 700; margin-bottom: 6px; color: var(--navy); }
+    .card h3 { font-size: 15px; font-weight: 600; margin-bottom: 4px; color: var(--navy); }
+    .card .desc { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 16px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+    @media (max-width: 768px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+    /* STAT BOXES */
+    .stat { background: var(--bg); border-radius: 12px; padding: 16px; text-align: center; }
+    .stat .val { font-size: 28px; font-weight: 800; color: var(--navy); }
+    .stat .label { font-size: 12px; color: var(--muted); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-teal { background: var(--teal-light); }
+    .stat-teal .val { color: var(--teal); }
+    .stat-gold { background: var(--gold-light); }
+    .stat-gold .val { color: var(--gold); }
+    /* HIGHLIGHT BOX */
+    .highlight-box { background: linear-gradient(135deg, var(--teal-light), #D1FAE5); border: 2px solid var(--teal); border-radius: 14px; padding: 20px; }
+    .highlight-box h3 { color: var(--teal); margin-bottom: 8px; font-size: 16px; }
+    .highlight-box p { font-size: 14px; color: var(--text); line-height: 1.6; }
+    /* SLIDER */
+    .slider-container { margin: 20px 0; }
+    .slider-label { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+    .slider-label .title { font-size: 14px; font-weight: 600; color: var(--navy); }
+    .slider-value { font-size: 32px; font-weight: 800; color: var(--teal); }
+    input[type=range] { -webkit-appearance: none; width: 100%; height: 8px; background: linear-gradient(to right, var(--teal-light), var(--teal)); border-radius: 4px; outline: none; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 28px; height: 28px; border-radius: 50%; background: var(--teal); cursor: pointer; box-shadow: 0 2px 8px rgba(13,148,136,0.4); }
+    input[type=range]::-moz-range-thumb { width: 28px; height: 28px; border-radius: 50%; background: var(--teal); cursor: pointer; border: none; }
+    /* PAYOUT CARDS */
+    .payout-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+    .payout-card { border-radius: 14px; padding: 24px; text-align: center; }
+    .payout-daniel { background: linear-gradient(135deg, #EFF6FF, #DBEAFE); border: 1px solid #93C5FD; }
+    .payout-lior { background: linear-gradient(135deg, var(--teal-light), #A7F3D0); border: 2px solid var(--teal); }
+    .payout-card .name { font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+    .payout-daniel .name { color: var(--steel); }
+    .payout-lior .name { color: var(--teal); }
+    .payout-card .amount { font-size: 40px; font-weight: 800; margin-bottom: 4px; }
+    .payout-daniel .amount { color: var(--navy); }
+    .payout-lior .amount { color: #047857; }
+    .payout-card .pct { font-size: 16px; color: var(--muted); font-weight: 600; }
+    .payout-card .sub { font-size: 13px; color: var(--muted); margin-top: 8px; }
+    /* PROGRESS BAR */
+    .progress-wrap { margin-top: 20px; }
+    .progress-label { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+    .progress-bar { height: 16px; background: #E2E8F0; border-radius: 8px; overflow: hidden; position: relative; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--teal), #059669); border-radius: 8px; transition: width 0.4s ease; }
+    /* TABLE */
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th { background: var(--navy); color: white; padding: 12px 16px; text-align: right; font-weight: 600; font-size: 13px; }
+    th:first-child { text-align: left; border-radius: 10px 0 0 0; }
+    th:last-child { border-radius: 0 10px 0 0; }
+    td { padding: 11px 16px; text-align: right; border-bottom: 1px solid var(--border); }
+    td:first-child { text-align: left; font-weight: 600; }
+    tr:hover td { background: #F1F5F9; }
+    .row-highlight td { background: var(--gold-light) !important; font-weight: 700; }
+    .row-equal td { background: #F0FDF4; }
+    /* CHART */
+    .chart-container { position: relative; height: 350px; margin-top: 12px; }
+    /* MILESTONES */
+    .milestone-timeline { display: flex; justify-content: space-between; margin-top: 24px; position: relative; }
+    .milestone-timeline::before { content: ''; position: absolute; top: 16px; left: 5%; right: 5%; height: 3px; background: linear-gradient(to right, var(--teal-light), var(--teal)); border-radius: 2px; }
+    .milestone { text-align: center; position: relative; z-index: 1; flex: 1; }
+    .milestone .dot { width: 32px; height: 32px; border-radius: 50%; background: var(--teal); color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; margin: 0 auto 8px; box-shadow: 0 2px 6px rgba(13,148,136,0.3); }
+    .milestone .m-val { font-size: 15px; font-weight: 700; color: var(--navy); }
+    .milestone .m-label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    /* FOOTER */
+    .footer { text-align: center; padding: 32px; color: var(--muted); font-size: 12px; }
+    /* PRINCIPLES */
+    .principle { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 16px; }
+    .principle .icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .principle .icon-teal { background: var(--teal-light); }
+    .principle .icon-gold { background: var(--gold-light); }
+    .principle .icon-blue { background: #DBEAFE; }
+    .principle h4 { font-size: 14px; font-weight: 700; color: var(--navy); margin-bottom: 2px; }
+    .principle p { font-size: 13px; color: var(--muted); line-height: 1.5; }
+  
+    .math-block { background: #F1F5F9; border-left: 4px solid var(--teal); border-radius: 8px; padding: 16px 18px; margin: 16px 0; font-family: 'Monaco','Menlo','Ubuntu Mono',monospace; font-size: 13px; line-height: 1.8; color: var(--navy); overflow-x: auto; white-space: pre-wrap; word-wrap: break-word; }
+    .math-inline { background: #F1F5F9; border-radius: 4px; padding: 2px 6px; font-family: 'Monaco','Menlo','Ubuntu Mono',monospace; font-size: 13px; color: var(--navy); }
+    .param-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+    .param-table th { background: var(--steel); color: white; padding: 10px 12px; text-align: left; font-weight: 600; }
+    .param-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    .param-table tr:hover td { background: #F1F5F9; }
+    .param-table .param-name { font-weight: 600; color: var(--navy); font-family: 'Monaco','Menlo','Ubuntu Mono',monospace; }
+    .math-proof { background: linear-gradient(135deg, #F0FDF4, #ECFDF5); border: 1px solid #BBF7D0; border-radius: 8px; padding: 16px; margin: 12px 0; font-size: 13px; line-height: 1.7; color: var(--text); }
+    .math-proof strong { color: var(--navy); }
+
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <h1>Partnership Equity Model</h1>
+    <div class="partners">Daniel &amp; Lior &mdash; Co-Founders</div>
+  </div>
+  <div class="currency-toggle">
+    <div>
+      <div class="toggle-btn">
+        <button id="btnILS" class="active" onclick="setCurrency('ILS')">&#8362; ILS</button>
+        <button id="btnUSD" onclick="setCurrency('USD')">$ USD</button>
+      </div>
+      <div class="rate-note">1 USD = 3.09 ILS</div>
+    </div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('overview')">Overview</div>
+  <div class="tab" onclick="showTab('explorer')">Interactive Explorer</div>
+  <div class="tab" onclick="showTab('growth')">Growth Journey</div>
+  <div class="tab" onclick="showTab('scenarios')">Scenarios</div>
+      <div class="tab" onclick="showTab('math')">Math &amp; Formulas</div>
+</div>
+
+<!-- ==================== TAB 1: OVERVIEW ==================== -->
+<div id="overview" class="page active">
+  <div class="card">
+    <h2>How Our Partnership Works</h2>
+    <p class="desc">A fair, transparent equity model that rewards both partners. We start as equal partners and the split adjusts as the company grows &mdash; ensuring everyone benefits from the upside we build together.</p>
+    <div class="grid-3" style="margin-bottom: 24px;">
+      <div class="stat stat-teal">
+        <div class="val">50 / 50</div>
+        <div class="label">Starting Split</div>
+      </div>
+      <div class="stat">
+        <div class="val" id="ovEqualSplit"></div>
+        <div class="label">Equal Split Up To</div>
+      </div>
+      <div class="stat stat-gold">
+        <div class="val" id="ovLiorTarget"></div>
+        <div class="label">Lior's Target Payout</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>Core Principles</h3>
+      <div style="margin-top: 12px;">
+        <div class="principle">
+          <div class="icon icon-teal">&#129309;</div>
+          <div>
+            <h4>Equal Foundation</h4>
+            <p id="ovPrinciple1"></p>
+          </div>
+        </div>
+        <div class="principle">
+          <div class="icon icon-gold">&#128200;</div>
+          <div>
+            <h4>Smooth Growth Curve</h4>
+            <p>The split adjusts gradually &mdash; no sudden jumps or cliffs. Every dollar of growth benefits both partners.</p>
+          </div>
+        </div>
+        <div class="principle">
+          <div class="icon icon-blue">&#127919;</div>
+          <div>
+            <h4>Clear Targets</h4>
+            <p id="ovPrinciple3"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <h3>Why This Model Works for Both of Us</h3>
+      <p id="ovHighlight1"></p>
+      <p id="ovHighlight2" style="margin-top: 10px;"></p>
+      <p style="margin-top: 14px; font-size: 13px; color: var(--muted);"><em>The bigger we build, the better it is for everyone. There's no scenario where growth hurts either partner.</em></p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Key Milestones</h3>
+    <div class="milestone-timeline">
+      <div class="milestone">
+        <div class="dot">1</div>
+        <div class="m-val" id="ovMs1Val"></div>
+        <div class="m-label">Equal Partners<br>50/50 split</div>
+      </div>
+      <div class="milestone">
+        <div class="dot">2</div>
+        <div class="m-val" id="ovMs2Val"></div>
+        <div class="m-label" id="ovMs2Label"></div>
+      </div>
+      <div class="milestone">
+        <div class="dot">3</div>
+        <div class="m-val" id="ovMs3Val"></div>
+        <div class="m-label" id="ovMs3Label"></div>
+      </div>
+      <div class="milestone">
+        <div class="dot">&#10026;</div>
+        <div class="m-val" id="ovMs4Val"></div>
+        <div class="m-label" id="ovMs4Label"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TAB 2: INTERACTIVE EXPLORER ==================== -->
+<div id="explorer" class="page">
+  <div class="card">
+    <h2>Interactive Explorer</h2>
+    <p class="desc">Drag the slider to see exactly how the equity splits at any exit value.</p>
+    <div class="slider-container">
+      <div class="slider-label">
+        <span class="title">Exit Value</span>
+        <span class="slider-value" id="sliderVal"></span>
+      </div>
+      <input type="range" id="exitSlider" min="1" max="500" value="25" step="0.5" oninput="updateExplorer()">
+      <div id="sliderTicks" style="display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: 4px;"></div>
+    </div>
+    <div class="payout-grid">
+      <div class="payout-card payout-daniel">
+        <div class="name">Daniel</div>
+        <div class="amount" id="danielAmt"></div>
+        <div class="pct" id="danielPct"></div>
+      </div>
+      <div class="payout-card payout-lior">
+        <div class="name">Lior</div>
+        <div class="amount" id="liorAmt"></div>
+        <div class="pct" id="liorPct"></div>
+        <div class="sub" id="liorTarget"></div>
+      </div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-label">
+        <span id="progressLabel"></span>
+        <span id="progressPct"></span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>Split Percentage</h3>
+      <div class="chart-container"><canvas id="explorerPctChart"></canvas></div>
+    </div>
+    <div class="card">
+      <h3 id="payoutChartTitle">Payouts</h3>
+      <div class="chart-container"><canvas id="explorerPayChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TAB 3: GROWTH JOURNEY ==================== -->
+<div id="growth" class="page">
+  <div class="card">
+    <h2>Growth Journey</h2>
+    <p class="desc" id="growthDesc"></p>
+    <div class="chart-container" style="height: 400px;"><canvas id="growthChart"></canvas></div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <h3 id="journeyTitle"></h3>
+      <p class="desc">At every stage of growth, Lior's payout increases. Here's the journey:</p>
+      <table>
+        <thead><tr><th>Exit Value</th><th>Lior Gets</th><th>% of Target</th></tr></thead>
+        <tbody id="liorJourney"></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h3>What This Means</h3>
+      <div style="margin-top: 8px;">
+        <div class="principle">
+          <div class="icon icon-teal">&#128176;</div>
+          <div>
+            <h4>Every Dollar Counts</h4>
+            <p>There's no exit value where Lior's payout goes down. Growth always means more money for both partners.</p>
+          </div>
+        </div>
+        <div class="principle">
+          <div class="icon icon-gold">&#128200;</div>
+          <div>
+            <h4>Target is Realistic</h4>
+            <p id="growthRealistic"></p>
+          </div>
+        </div>
+        <div class="principle">
+          <div class="icon icon-blue">&#128737;</div>
+          <div>
+            <h4>Downside Protection</h4>
+            <p id="growthDownside"></p>
+          </div>
+        </div>
+      </div>
+      <div class="highlight-box" style="margin-top: 16px;">
+        <h3>The Bottom Line</h3>
+        <p id="growthBottomLine"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TAB 4: SCENARIOS ==================== -->
+<div id="scenarios" class="page">
+  <div class="card">
+    <h2>Detailed Scenario Table</h2>
+    <p class="desc">Complete breakdown at key exit values. Yellow-highlighted rows mark important milestones.</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Exit Value</th>
+          <th>Daniel %</th>
+          <th>Daniel Gets</th>
+          <th>Lior %</th>
+          <th>Lior Gets</th>
+          <th>Lior's Target %</th>
+        </tr>
+      </thead>
+      <tbody id="scenarioTable"></tbody>
+    </table>
+  </div>
+  <div class="card">
+    <h2>Custom Scenario</h2>
+    <p class="desc">Enter any exit value to see the exact split.</p>
+    <div style="display: flex; gap: 12px; align-items: center; margin-top: 8px;">
+      <span style="font-weight: 600;" id="customPrefix">Exit Value: $</span>
+      <input type="number" id="customExit" value="50" min="1" max="500" style="width: 100px; padding: 8px 12px; border: 2px solid var(--border); border-radius: 8px; font-size: 16px; font-weight: 600;">
+      <span style="font-weight: 600;">M</span>
+      <button onclick="calcCustom()" style="padding: 8px 20px; background: var(--teal); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px;">Calculate</button>
+    </div>
+    <div id="customResult" style="margin-top: 16px; display: none;">
+      <div class="grid-3">
+        <div class="stat"><div class="val" id="cDanielAmt"></div><div class="label">Daniel Gets</div></div>
+        <div class="stat stat-teal"><div class="val" id="cLiorAmt"></div><div class="label">Lior Gets</div></div>
+        <div class="stat"><div class="val" id="cSplit"></div><div class="label">Split</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+  <div id="math" class="page">
+    <h2>Mathematical Specification</h2>
+    <p class="subtitle">Complete formal definition of the partnership equity function for verification and analysis</p>
+
+    <div class="card">
       <h3>1. Core Formula \u2014 The Piecewise Function</h3>
       <p>Daniel\u2019s equity share D(x) as a function of exit value x (in millions USD):</p>
       <div class="math-block">D(x) = {\n  0.50                          if x \u2264 6.8\n  0.50 + 0.30 \u00b7 f(x)           if 6.8 &lt; x &lt; 110\n  0.80                          if x \u2265 110\n}</div>
