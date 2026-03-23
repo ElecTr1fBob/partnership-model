@@ -102,6 +102,17 @@
     .principle .icon-blue { background: #DBEAFE; }
     .principle h4 { font-size: 14px; font-weight: 700; color: var(--navy); margin-bottom: 2px; }
     .principle p { font-size: 13px; color: var(--muted); line-height: 1.5; }
+  
+    .math-block { background: #F1F5F9; border-left: 4px solid var(--teal); border-radius: 8px; padding: 16px 18px; margin: 16px 0; font-family: 'Monaco','Menlo','Ubuntu Mono',monospace; font-size: 13px; line-height: 1.8; color: var(--navy); overflow-x: auto; white-space: pre-wrap; word-wrap: break-word; }
+    .math-inline { background: #F1F5F9; border-radius: 4px; padding: 2px 6px; font-family: 'Monaco','Menlo','Ubuntu Mono',monospace; font-size: 13px; color: var(--navy); }
+    .param-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+    .param-table th { background: var(--steel); color: white; padding: 10px 12px; text-align: left; font-weight: 600; }
+    .param-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    .param-table tr:hover td { background: #F1F5F9; }
+    .param-table .param-name { font-weight: 600; color: var(--navy); font-family: 'Monaco','Menlo','Ubuntu Mono',monospace; }
+    .math-proof { background: linear-gradient(135deg, #F0FDF4, #ECFDF5); border: 1px solid #BBF7D0; border-radius: 8px; padding: 16px; margin: 12px 0; font-size: 13px; line-height: 1.7; color: var(--text); }
+    .math-proof strong { color: var(--navy); }
+
   </style>
 </head>
 <body>
@@ -127,6 +138,7 @@
   <div class="tab" onclick="showTab('explorer')">Interactive Explorer</div>
   <div class="tab" onclick="showTab('growth')">Growth Journey</div>
   <div class="tab" onclick="showTab('scenarios')">Scenarios</div>
+      <div class="tab" onclick="showTab('math')">Math &amp; Formulas</div>
 </div>
 
 <!-- ==================== TAB 1: OVERVIEW ==================== -->
@@ -349,7 +361,100 @@
   </div>
 </div>
 
-<div class="footer">Partnership Equity Model &middot; Confidential &middot; 2026</div>
+
+  <div id="math" class="page" style="display:none">
+    <h2>Mathematical Specification</h2>
+    <p class="subtitle">Complete formal definition of the partnership equity function for verification and analysis</p>
+
+    <div class="card">
+      <h3>1. Core Formula \u2014 The Piecewise Function</h3>
+      <p>Daniel\u2019s equity share D(x) as a function of exit value x (in millions USD):</p>
+      <div class="math-block">D(x) = {\n  0.50                          if x \u2264 6.8\n  0.50 + 0.30 \u00b7 f(x)           if 6.8 &lt; x &lt; 110\n  0.80                          if x \u2265 110\n}</div>
+      <p>where:</p>
+      <div class="math-block">f(x) = [1 \u2212 e^(\u2212k \u00b7 (x \u2212 x\u2080)^p)] / [1 \u2212 e^(\u2212k \u00b7 (x_max \u2212 x\u2080)^p)]</div>
+      <p>with parameters:</p>
+      <table class="param-table">
+        <tr><th>Parameter</th><th>Value</th><th>Meaning</th></tr>
+        <tr><td class="param-name">x\u2080</td><td>6.8</td><td>Transition point \u2014 exit value where equity shift begins ($6.8M)</td></tr>
+        <tr><td class="param-name">x_max</td><td>110</td><td>Saturation point \u2014 exit value where Daniel reaches maximum equity ($110M)</td></tr>
+        <tr><td class="param-name">k</td><td>0.05</td><td>Rate parameter \u2014 controls steepness of the S-curve transition</td></tr>
+        <tr><td class="param-name">p</td><td>0.40</td><td>Power parameter \u2014 creates concavity (sublinear growth via power-law input)</td></tr>
+        <tr><td class="param-name">D_min</td><td>0.50 (50%)</td><td>Daniel\u2019s minimum equity share (equal split baseline)</td></tr>
+        <tr><td class="param-name">D_max</td><td>0.80 (80%)</td><td>Daniel\u2019s maximum equity share (cap)</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>2. Function Design Rationale</h3>
+      <h4>2.1 Why a Modified Complementary Exponential CDF?</h4>
+      <p>The core building block <span class="math-inline">1 − e^(−t)</span> is the CDF of an exponential distribution. It maps [0, ∞) → [0, 1) with natural saturation behavior — fast initial growth that gradually levels off.</p>
+      <h4>2.2 Why the Power-Law Input Transform?</h4>
+      <p>Instead of using the raw distance <span class="math-inline">(x − x₀)</span>, we apply <span class="math-inline">(x − x₀)^0.40</span>. Since p = 0.40 &lt; 1, this is a concave transform that compresses large values more than small ones, creating diminishing returns.</p>
+      <h4>2.3 Why the Normalization Denominator?</h4>
+      <p>The denominator ensures f(x_max) = 1 exactly. Without it, the exponential CDF approaches 1 asymptotically but never reaches it.</p>
+      <div class="math-block">Denominator = 1 − e^(−0.05 · 103.2^0.40) ≈ 1 − e^(−0.31955) ≈ 1 − 0.72634 ≈ 0.27366</div>
+      <h4>2.4 The Complete Expansion</h4>
+      <div class="math-block">For 6.8 &lt; x &lt; 110:
+D(x) = 0.50 + 0.30 · [1 − e^(−0.05 · (x−6.8)^0.40)] / 0.27366
+
+Or equivalently:
+D(x) = 0.50 + 1.0963 · [1 − e^(−0.05 · (x−6.8)^0.40)]</div>
+    </div>
+
+    <div class="card">
+      <h3>3. Key Mathematical Properties</h3>
+      <div class="math-proof"><strong>Continuity at x = 6.8:</strong><br>lim(x→6.8⁺) D(x) = 0.50 + 0.30 · f(6.8) = 0.50 + 0.30 · 0 = 0.50 = D(6.8) ✓</div>
+      <div class="math-proof"><strong>Continuity at x = 110:</strong><br>lim(x→110⁻) D(x) = 0.50 + 0.30 · f(110) = 0.50 + 0.30 · 1 = 0.80 = D(110) ✓</div>
+      <div class="math-proof"><strong>Monotonicity (D is non-decreasing):</strong><br>For x ≤ 6.8: constant ✓<br>For x ≥ 110: constant ✓<br>For 6.8 &lt; x &lt; 110: D'(x) = 0.30 · f'(x) &gt; 0 (composition of increasing functions) ✓</div>
+      <div class="math-proof"><strong>Bounded range:</strong> D(x) ∈ [0.50, 0.80], Lior's share L(x) = 1 − D(x) ∈ [0.20, 0.50] ✓</div>
+    </div>
+
+    <div class="card">
+      <h3>4. Parameter Reference</h3>
+      <table class="param-table">
+        <tr><th>Symbol</th><th>Expression</th><th>Approximate Value</th></tr>
+        <tr><td class="param-name">k · (x_max−x₀)^p</td><td>0.05 · 103.2^0.40</td><td>0.31955</td></tr>
+        <tr><td class="param-name">e^(−k·(x_max−x₀)^p)</td><td>e^(−0.31955)</td><td>0.72634</td></tr>
+        <tr><td class="param-name">Normalization</td><td>1 − e^(−0.31955)</td><td>0.27366</td></tr>
+        <tr><td class="param-name">Scale factor</td><td>0.30 / 0.27366</td><td>1.09627</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>5. Derivative — Rate of Equity Shift</h3>
+      <p>The derivative D'(x) shows how quickly equity shifts per million dollar increase:</p>
+      <div style="height:300px; position:relative;"><canvas id="derivativeChart"></canvas></div>
+      <p style="margin-top:12px; font-size:13px; color:var(--text);">Peak rate occurs just above $6.8M, then decreases monotonically.</p>
+    </div>
+
+    <div class="card">
+      <h3>6. Numerical Verification Table</h3>
+      <p>Computed values for verification (all from the exact formula):</p>
+      <div style="overflow-x:auto;">
+        <table class="param-table">
+          <thead><tr><th>Exit Value</th><th>Daniel %</th><th>Lior %</th><th>Daniel $</th><th>Lior $</th><th>D'(x)</th></tr></thead>
+          <tbody id="mathVerifyTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>7. Asymptotic Behavior</h3>
+      <div class="math-block">As x approaches infinity (beyond the model range):
+Without capping: D(x) approaches 0.50 + 1.0963 = 1.5963
+This exceeds 1.0, which is why the cap at D_max = 0.80 is essential.
+The cap engages at x = 110M where f(x) = 1 exactly.</div>
+    </div>
+
+    <div class="card">
+      <h3>8. Design Principles Summary</h3>
+      <p><strong>Equal baseline:</strong> At modest exits (up to $6.8M), partners split 50/50.</p>
+      <p><strong>Performance reward:</strong> Beyond $6.8M, Daniel's operational execution earns additional equity.</p>
+      <p><strong>Diminishing marginal shift:</strong> The concave power transform (p=0.40) ensures each additional million shifts less equity than the previous one.</p>
+      <p><strong>Hard cap protection:</strong> Lior never drops below 20%, preserving meaningful co-ownership.</p>
+      <p><strong>Mathematical elegance:</strong> A single continuous, monotone, bounded function with no discontinuities, no edge cases, fully deterministic.</p>
+    </div>
+Partnership Equity Model &middot; Confidential &middot; 2026</div>
 
 <script>
 // ==================== CURRENCY ====================
@@ -396,7 +501,7 @@ function showTab(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  document.querySelectorAll('.tab')[['overview','explorer','growth','scenarios'].indexOf(id)].classList.add('active');
+  document.querySelectorAll('.tab')[['overview','explorer','growth','scenarios','math'].indexOf(id)].classList.add('active');
   refreshAll();
 }
 
@@ -637,6 +742,38 @@ function calcCustom() {
 }
 
 // ==================== INIT ====================
+    let derivChart;
+    function renderMath() {
+      if (currentTab !== 'math') return;
+      if (derivChart) { derivChart.destroy(); derivChart = null; }
+      const h = 0.001;
+      const points = [];
+      for (let x = 0; x <= 150; x += 0.5) {
+        const dPrime = (danielPct(x + h) - danielPct(x - h)) / (2 * h);
+        points.push({ x: x, y: dPrime * 100 });
+      }
+      const ctx = document.getElementById('derivativeChart');
+      if (ctx) {
+        derivChart = new Chart(ctx, {
+          type: 'line',
+          data: { datasets: [{ label: "D'(x) rate of equity shift (pp per $M)", data: points, borderColor: '#D97706', borderWidth: 2.5, pointRadius: 0, fill: { target: 'origin', above: 'rgba(217,119,6,0.1)' } }] },
+          options: { responsive: true, maintainAspectRatio: false, scales: { x: { type: 'linear', title: { display: true, text: 'Exit Value ($M USD)', font: { size: 12 } }, min: 0, max: 150 }, y: { title: { display: true, text: "D'(x) (percentage points per $M)", font: { size: 12 } }, min: 0 } }, plugins: { legend: { position: 'top', labels: { usePointStyle: true, padding: 16 } } } }
+        });
+      }
+      const tablePoints = [1, 5, 6.8, 7, 10, 15, 20, 25, 30, 40, 50, 56, 75, 100, 110, 150, 200, 300, 500];
+      const tbody = document.getElementById('mathVerifyTable');
+      if (tbody) {
+        tbody.innerHTML = '';
+        tablePoints.forEach(function(x) {
+          const dp = danielPct(x); const lp = 1 - dp;
+          const dPay = x * dp; const lPay = x * lp;
+          const dPrime = (danielPct(x + h) - danielPct(x - h)) / (2 * h);
+          const cls = x <= 6.8 ? ' class="row-equal"' : x >= 110 ? ' class="row-highlight"' : '';
+          tbody.innerHTML += '<tr' + cls + '><td>$' + x + 'M</td><td>' + (dp*100).toFixed(4) + '%</td><td>' + (lp*100).toFixed(4) + '%</td><td>$' + dPay.toFixed(2) + 'M</td><td>$' + lPay.toFixed(2) + 'M</td><td>' + dPrime.toFixed(6) + '</td></tr>';
+        });
+      }
+    }
+
 window.addEventListener('DOMContentLoaded', () => { refreshAll(); });
 </script>
 </body>
